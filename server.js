@@ -6,17 +6,23 @@ const { v4: uuidV4 } = require('uuid');
 
 app.use(express.static('public'));
 
-/// 1. When someone goes to your website link, show the Landing Page
+// 1. HOME PAGE (Must be first!)
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/home.html');
 });
 
-// 2. When someone clicks "New Meeting", create an ID and move them
+// 2. NEW MEETING TRIGGER
 app.get('/new-meeting', (req, res) => {
     res.redirect(`/${uuidV4()}`);
 });
 
-// 3. When there is a Room ID in the URL, show the Video Room
+// 3. EXIT PAGE
+app.get('/left', (req, res) => {
+    res.sendFile(__dirname + '/public/left.html');
+});
+
+// 4. VIDEO ROOM (Must be last!)
+// The ":" tells the server "anything after the slash is a room ID"
 app.get('/:room', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
