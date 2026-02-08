@@ -6,24 +6,20 @@ const { v4: uuidV4 } = require('uuid');
 
 app.use(express.static('public'));
 
-// 1. HOME PAGE (Must be first!)
+// 1. HOME PAGE - Explicitly look for the empty path
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/home.html');
 });
 
-// 2. NEW MEETING TRIGGER
+// 2. NEW MEETING - The trigger
 app.get('/new-meeting', (req, res) => {
     res.redirect(`/${uuidV4()}`);
 });
 
-// 3. EXIT PAGE
-app.get('/left', (req, res) => {
-    res.sendFile(__dirname + '/public/left.html');
-});
-
-// 4. VIDEO ROOM (Must be last!)
-// The ":" tells the server "anything after the slash is a room ID"
+// 3. THE ROOM - Only trigger if there is a specific ID
+// We add a check to make sure 'room' isn't empty or 'favicon.ico'
 app.get('/:room', (req, res) => {
+    if (req.params.room === 'favicon.ico') return; 
     res.sendFile(__dirname + '/public/index.html');
 });
 
