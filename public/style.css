@@ -41,3 +41,33 @@ video { width: 400px; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px;
 .control-btn { width: 45px; height: 45px; border-radius: 50%; border: none; background: #3c4043; color: white; cursor: pointer; font-size: 18px; }
 .leave-btn { background: #ea4335; }
 .active-red { background: #ea4335 !important; }
+
+/* Only applies to screens smaller than 768px (Phones/Tablets) */
+@media (max-width: 768px) {
+    #video-grid {
+        display: flex;
+        flex-direction: column; /* Stacks videos vertically instead of a messy grid */
+        align-items: center;
+        padding: 10px;
+        gap: 10px;
+        overflow-y: auto; /* Allows scrolling through participants */
+    }
+
+    video {
+        width: 100% !important; /* Forces video to fill the phone width */
+        height: 250px !important; /* Keeps a consistent height */
+        object-fit: cover;
+        border-radius: 10px;
+    }
+
+    .main__controls {
+        padding: 5px;
+        height: 70px; /* Slimmer bar for more screen space */
+    }
+
+    .main__controls__button {
+        padding: 8px 12px;
+        font-size: 13px; /* Slightly smaller text to fit buttons side-by-side */
+        min-width: 80px;
+    }
+}
