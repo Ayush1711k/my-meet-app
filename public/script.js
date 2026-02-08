@@ -38,7 +38,6 @@ function sendMessage() {
     }
 }
 
-// Listen for messages from server
 socket.on('createMessage', message => {
     const msgContainer = document.getElementById('all-messages');
     const msgDiv = document.createElement('div');
@@ -46,12 +45,10 @@ socket.on('createMessage', message => {
     msgDiv.innerHTML = `<b>User:</b><br>${message}`;
     msgContainer.append(msgDiv);
     
-    // Auto-scroll to bottom
     const chatWindow = document.getElementById('chat-window');
     chatWindow.scrollTop = chatWindow.scrollHeight;
 });
 
-// Support "Enter" key for chat
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         sendMessage();
@@ -83,30 +80,35 @@ function addVideoStream(video, stream) {
     videoGrid.append(video);
 }
 
-// UI Features
 function updateParticipants(n) {
     const count = document.getElementById('participant-count');
-    count.innerText = parseInt(count.innerText) + n;
+    if (count) {
+        count.innerText = parseInt(count.innerText || "0") + n;
+    }
 }
 
+// OPTIMIZED LEAVE CALL FUNCTION
 function leaveCall() {
-    // 1. Kill the video/audio streams so the camera light turns off
+    // 1. Tell the browser to stop all network activity immediately
+    window.stop();
+
+    // 2. Kill camera and microphone access
     if (myVideoStream) {
         myVideoStream.getTracks().forEach(track => track.stop());
     }
 
-    // 2. Destroy the PeerJS connection so it doesn't try to reconnect
+    // 3. Destroy Peer connection to stop handshakes
     if (myPeer) {
         myPeer.destroy();
     }
 
-    // 3. Manually disconnect from Socket.io
+    // 4. Disconnect the socket
     if (socket) {
         socket.disconnect();
     }
 
-    // 4. Send the user away from the room URL
-    window.location.href = "/"; // Or redirect to a 'Meeting Ended' page
+    // 5. Replace current history entry so user can't "Back" into the room
+    window.location.replace("/"); 
 }
 
 function copyLink() {
@@ -127,7 +129,13 @@ const toggleVideo = () => {
 }
 
 setInterval(() => {
-    document.getElementById('clock').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const clock = document.getElementById('clock');
+    if (clock) {
+        clock.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
 }, 1000);
 
-document.getElementById('room-id-display').innerText = "Room: " + ROOM_ID.substring(0, 6);
+const roomDisplay = document.getElementById('room-id-display');
+if (roomDisplay) {
+    roomDisplay.innerText = "Room: " + ROOM_ID.substring(0, 6);
+}
