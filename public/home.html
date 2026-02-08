@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RedDot Rush | Video Meetings</title>
+    <title>RedDot Rush | Home</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #1a1c1e; --card: #282a2d; --blue: #8ab4f8; --text: #e8eaed; }
@@ -11,16 +11,16 @@
         .hero { text-align: center; max-width: 500px; padding: 40px; background: var(--card); border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         h1 { font-size: 32px; margin-bottom: 10px; color: var(--blue); }
         .btn-group { display: flex; flex-direction: column; gap: 15px; margin-top: 30px; }
-        .btn { padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 16px; transition: 0.3s; }
+        .btn { padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 16px; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-new { background: var(--blue); color: #202124; }
         .join-box { display: flex; gap: 10px; margin-top: 10px; }
-        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #5f6368; background: #3c4043; color: white; }
+        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #5f6368; background: #3c4043; color: white; outline: none; }
     </style>
 </head>
 <body>
     <div class="hero">
         <i class="fas fa-video" style="font-size: 48px; color: var(--blue); margin-bottom: 20px;"></i>
-        <h1>MEET PRO</h1>
+        <h1>RedDot Rush</h1>
         <p>Premium video meetings. Now free for everyone.</p>
         
         <div class="btn-group">
@@ -36,9 +36,8 @@
         function joinMeeting() {
             const code = document.getElementById('roomCode').value.trim();
             if (code) {
-                // If they paste a full URL, we extract just the ID
-                const parts = code.split('/');
-                const id = parts[parts.length - 1];
+                // Extracts the ID if a full URL is pasted
+                const id = code.split('/').pop();
                 window.location.href = `/${id}`;
             }
         }
