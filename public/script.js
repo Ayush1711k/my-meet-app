@@ -60,16 +60,15 @@ myPeer.on('open', id => {
 });
 
 socket.on('user-disconnected', userId => {
-    if (peers[userId]) {
-        // Close the PeerJS call
-        if (peers[userId].call) peers[userId].call.close();
-        
-        // Remove the specific video element from the UI
-        if (peers[userId].video) peers[userId].video.remove();
-        
-        // Clean up the object
-        delete peers[userId];
+    // 1. Close the connection
+    if (peers[userId]) peers[userId].close();
+
+    // 2. Find the video box using the "Label" we created in Step 1 and remove it
+    const videoToRemove = document.getElementById(userId);
+    if (videoToRemove) {
+        videoToRemove.remove();
     }
+
     updateParticipants(-1);
 });
 
@@ -77,8 +76,8 @@ function connectToNewUser(userId, stream) {
     const call = myPeer.call(userId, stream);
     const video = document.createElement('video');
     
-    // Assign an ID or property to the video so we can find it
-    video.setAttribute('data-peer-id', userId); 
+    // This is the "Label": We save the userId on the video element
+    video.id = userId; 
 
     call.on('stream', userVideoStream => {
         addVideoStream(video, userVideoStream);
@@ -88,7 +87,7 @@ function connectToNewUser(userId, stream) {
         video.remove();
     });
 
-    peers[userId] = { call, video }; // Store both the call and the video element
+    peers[userId] = call;
 }
 
 function addVideoStream(video, stream) {
