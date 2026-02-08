@@ -6,10 +6,17 @@ const { v4: uuidV4 } = require('uuid');
 
 app.use(express.static('public'));
 
+/// 1. When someone goes to your website link, show the Landing Page
 app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/public/home.html');
+});
+
+// 2. When someone clicks "New Meeting", create an ID and move them
+app.get('/new-meeting', (req, res) => {
     res.redirect(`/${uuidV4()}`);
 });
 
+// 3. When there is a Room ID in the URL, show the Video Room
 app.get('/:room', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
@@ -17,20 +24,20 @@ app.get('/:room', (req, res) => {
 io.on('connection', (socket) => {
     socket.on('join-room', (roomId, userId) => {
         socket.join(roomId);
+        socket.userId = userId; // Save ID for clean disconnects
         socket.to(roomId).emit('user-connected', userId);
 
-        // Listen for chat messages
         socket.on('message', (message) => {
-            // Send the message back to everyone in the SAME room
             io.to(roomId).emit('createMessage', message);
         });
 
         socket.on('disconnect', () => {
-            socket.to(roomId).emit('user-disconnected', userId);
+            socket.to(roomId).emit('user-disconnected', socket.userId);
         });
     });
 });
 
-server.listen(3000, () => {
-    console.log('Server running! Visit http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
