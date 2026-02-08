@@ -105,25 +105,21 @@ function updateParticipants(n) {
 
 // OPTIMIZED LEAVE CALL FUNCTION
 function leaveCall() {
-    // 1. Stop all network activity
+    // 1. Force the browser to stop any pending requests
     window.stop();
 
-    // 2. Stop camera and microphone
+    // 2. Shut down the hardware (Camera/Mic)
     if (myVideoStream) {
         myVideoStream.getTracks().forEach(track => track.stop());
     }
 
-    // 3. Destroy PeerJS and Socket connections
+    // 3. Destroy Peer and Socket connections
     if (myPeer) myPeer.destroy();
     if (socket) socket.disconnect();
 
-    // 4. Attempt to close the tab
-    window.close();
-
-    // 5. Fallback: If the browser blocks window.close(), redirect to a "Good Bye" page
-    setTimeout(() => {
-        window.location.replace("https://www.google.com");
-    }, 100);
+    // 4. Redirect to our custom exit page
+    // Using .replace ensures they can't click 'Back' to rejoin the room
+    window.location.replace("/left.html");
 }
 
 function copyLink() {
