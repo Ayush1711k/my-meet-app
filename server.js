@@ -7,7 +7,7 @@ const { v4: uuidV4 } = require('uuid');
 // This tells Express where to find CSS/JS
 app.use(express.static('public'));
 
-// 1. LANDING PAGE (Priority #1)
+// 1. LANDING PAGE - This must stay at the top
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/home.html');
 });
@@ -22,9 +22,9 @@ app.get('/left', (req, res) => {
     res.sendFile(__dirname + '/public/left.html');
 });
 
-// 4. THE MEETING ROOM (Dynamic Route)
-app.get('/:room', (req, res) => {
-    // We renamed index.html to room.html to stop the server from defaulting to it
+// 4. THE MEETING ROOM (Strict Regex Route)
+// The ([a-zA-Z0-9-]+) part ensures this ONLY triggers if there is an ID
+app.get('/:room([a-zA-Z0-9-]+)', (req, res) => {
     res.sendFile(__dirname + '/public/room.html');
 });
 
