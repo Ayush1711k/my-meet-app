@@ -90,8 +90,23 @@ function updateParticipants(n) {
 }
 
 function leaveCall() {
-    if (myVideoStream) myVideoStream.getTracks().forEach(t => t.stop());
-    window.location.href = '/';
+    // 1. Kill the video/audio streams so the camera light turns off
+    if (myVideoStream) {
+        myVideoStream.getTracks().forEach(track => track.stop());
+    }
+
+    // 2. Destroy the PeerJS connection so it doesn't try to reconnect
+    if (myPeer) {
+        myPeer.destroy();
+    }
+
+    // 3. Manually disconnect from Socket.io
+    if (socket) {
+        socket.disconnect();
+    }
+
+    // 4. Send the user away from the room URL
+    window.location.href = "/"; // Or redirect to a 'Meeting Ended' page
 }
 
 function copyLink() {
