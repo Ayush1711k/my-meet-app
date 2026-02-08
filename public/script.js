@@ -60,18 +60,35 @@ myPeer.on('open', id => {
 });
 
 socket.on('user-disconnected', userId => {
-    if (peers[userId]) peers[userId].close();
+    if (peers[userId]) {
+        // Close the PeerJS call
+        if (peers[userId].call) peers[userId].call.close();
+        
+        // Remove the specific video element from the UI
+        if (peers[userId].video) peers[userId].video.remove();
+        
+        // Clean up the object
+        delete peers[userId];
+    }
     updateParticipants(-1);
 });
 
 function connectToNewUser(userId, stream) {
     const call = myPeer.call(userId, stream);
     const video = document.createElement('video');
+    
+    // Assign an ID or property to the video so we can find it
+    video.setAttribute('data-peer-id', userId); 
+
     call.on('stream', userVideoStream => {
         addVideoStream(video, userVideoStream);
     });
-    call.on('close', () => { video.remove(); });
-    peers[userId] = call;
+
+    call.on('close', () => {
+        video.remove();
+    });
+
+    peers[userId] = { call, video }; // Store both the call and the video element
 }
 
 function addVideoStream(video, stream) {
