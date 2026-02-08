@@ -1,0 +1,43 @@
+body {
+    background: #202124;
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    color: white;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    height: 60px;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #202124;
+    border-bottom: 1px solid #3d3d42;
+}
+
+.main-container { display: flex; flex-grow: 1; overflow: hidden; }
+
+/* Video Area */
+.main-left { flex: 0.8; position: relative; display: flex; flex-direction: column; background: #171717; }
+#video-grid { flex-grow: 1; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 15px; padding: 20px; }
+video { width: 400px; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; background: #3c4043; transform: scaleX(-1); }
+
+/* Chat Area */
+.main-right { flex: 0.2; background: #242324; border-left: 1px solid #3d3d42; display: flex; flex-direction: column; }
+.chat-header { padding: 15px; border-bottom: 1px solid #3d3d42; text-align: center; }
+.main-chat-window { flex-grow: 1; overflow-y: auto; padding: 15px; }
+.messages-container { display: flex; flex-direction: column; gap: 10px; }
+.message { background: #3c4043; padding: 8px 12px; border-radius: 8px; font-size: 14px; max-width: 90%; }
+
+.main-message-container { padding: 15px; display: flex; gap: 8px; background: #202124; border-top: 1px solid #3d3d42; }
+#chat-message { flex-grow: 1; background: #3c4043; border: none; color: white; padding: 10px; border-radius: 5px; outline: none; }
+#send-btn { background: #8ab4f8; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; color: #202124; font-weight: bold; }
+
+/* Controls */
+.controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; background: rgba(32,33,36,0.9); padding: 10px 20px; border-radius: 50px; }
+.control-btn { width: 45px; height: 45px; border-radius: 50%; border: none; background: #3c4043; color: white; cursor: pointer; font-size: 18px; }
+.leave-btn { background: #ea4335; }
+.active-red { background: #ea4335 !important; }

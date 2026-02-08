@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Meet Clone</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="header">
+        <div class="room-info">
+            <span id="room-id-display">Meeting Details</span>
+            <span class="separator">|</span>
+            <span id="clock">00:00</span>
+        </div>
+        <div class="participant-info">
+            👤 <span id="participant-count">1</span>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="main-left">
+            <div id="video-grid"></div>
+            <div class="controls">
+                <button id="mute-btn" class="control-btn" onclick="toggleAudio()">🎙️</button>
+                <button id="video-btn" class="control-btn" onclick="toggleVideo()">📹</button>
+                <button id="copy-btn" class="control-btn" onclick="copyLink()">🔗</button>
+                <button id="leave-btn" class="control-btn leave-btn" onclick="leaveCall()">📞</button>
+            </div>
+        </div>
+
+        <div class="main-right">
+            <div class="chat-header">
+                <h3>Meeting Chat</h3>
+            </div>
+            <div class="main-chat-window" id="chat-window">
+                <div class="messages-container" id="all-messages"></div>
+            </div>
+            <div class="main-message-container">
+                <input id="chat-message" type="text" placeholder="Type message..." autocomplete="off">
+                <button id="send-btn" onclick="sendMessage()">➤</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
