@@ -6,17 +6,24 @@ const mysql = require('mysql2');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
 
-// 1. DATABASE CONNECTION
+// 1. DATABASE CONNECTION (UPDATED FOR CLOUD)
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'Ayush@1234', 
-    database: 'flowstate_db' 
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    ssl: {
+        rejectUnauthorized: false // REQUIRED for Aiven Cloud security
+    }
 });
 
 db.connect(err => {
-    if (err) console.log("MySQL Status: Connection Failed ->", err.message);
-    else console.log("MySQL Status: Connected successfully...");
+    if (err) {
+        console.log("MySQL Status: Connection Failed ->", err.message);
+    } else {
+        console.log("MySQL Status: Connected successfully...");
+    }
 });
 
 // 2. MIDDLEWARE
