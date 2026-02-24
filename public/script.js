@@ -6,147 +6,103 @@ const myVideo = document.createElement('video');
 myVideo.muted = true;
 
 let myVideoStream;
-const peers = {};
+let currentUserName = "Ayush Sharma";
 
-navigator.mediaDevices.getUserMedia({
-    video: true,
-    audio: true
-}).then(stream => {
+// --- 1. NEW: UPDATE UI ELEMENTS (Display Room ID) ---
+const roomIdDisplay = document.getElementById('display-room-id');
+if (roomIdDisplay) {
+    roomIdDisplay.innerText = ROOM_ID;
+}
+
+// Fetch User Identity & Update Top Tag
+fetch('/api/user-data').then(res => res.json()).then(data => {
+    if(data.username) {
+        currentUserName = data.username;
+        const nameTag = document.getElementById('user-name-display');
+        if(nameTag) nameTag.innerText = currentUserName.toUpperCase();
+    }
+});
+
+// --- 2. NEW: COPY FUNCTIONALITY ---
+window.copyLink = () => {
+    navigator.clipboard.writeText(ROOM_ID).then(() => {
+        // Find the pill for visual feedback
+        const pill = document.querySelector('.room-info-pill');
+        if(pill) {
+            const originalBorder = pill.style.borderColor;
+            pill.style.borderColor = "#8ab4f8";
+            pill.style.boxShadow = "0 0 15px rgba(138, 180, 248, 0.4)";
+            
+            alert("Room ID: " + ROOM_ID + " copied to clipboard!");
+            
+            setTimeout(() => {
+                pill.style.borderColor = originalBorder;
+                pill.style.boxShadow = "none";
+            }, 1000);
+        }
+    });
+};
+
+// --- 3. EXISTING VIDEO LOGIC ---
+navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
     myVideoStream = stream;
     addVideoStream(myVideo, stream);
 
     myPeer.on('call', call => {
         call.answer(stream);
         const video = document.createElement('video');
-        call.on('stream', userVideoStream => {
-            addVideoStream(video, userVideoStream);
-        });
+        call.on('stream', userStream => addVideoStream(video, userStream));
     });
 
     socket.on('user-connected', userId => {
-        connectToNewUser(userId, stream);
-        updateParticipants(1);
+        setTimeout(() => connectToNewUser(userId, stream), 1000);
     });
 });
 
-// CHAT LOGIC
-function sendMessage() {
-    const msgInput = document.getElementById('chat-message');
-    if (msgInput.value.trim() !== "") {
-        socket.emit('message', msgInput.value);
-        msgInput.value = '';
-    }
-}
-
-socket.on('createMessage', message => {
-    const msgContainer = document.getElementById('all-messages');
-    const msgDiv = document.createElement('div');
-    msgDiv.classList.add('message');
-    msgDiv.innerHTML = `<b>User:</b><br>${message}`;
-    msgContainer.append(msgDiv);
-    
-    const chatWindow = document.getElementById('chat-window');
-    chatWindow.scrollTop = chatWindow.scrollHeight;
-});
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        sendMessage();
-    }
-});
-
-myPeer.on('open', id => {
-    socket.emit('join-room', ROOM_ID, id);
-});
-
-socket.on('user-disconnected', userId => {
-    // 1. Close the connection
-    if (peers[userId]) peers[userId].close();
-
-    // 2. Find the video box using the "Label" we created in Step 1 and remove it
-    const videoToRemove = document.getElementById(userId);
-    if (videoToRemove) {
-        videoToRemove.remove();
-    }
-
-    updateParticipants(-1);
-});
+myPeer.on('open', id => socket.emit('join-room', ROOM_ID, id));
 
 function connectToNewUser(userId, stream) {
     const call = myPeer.call(userId, stream);
     const video = document.createElement('video');
-    
-    // This is the "Label": We save the userId on the video element
-    video.id = userId; 
-
-    call.on('stream', userVideoStream => {
-        addVideoStream(video, userVideoStream);
-    });
-
-    call.on('close', () => {
-        video.remove();
-    });
-
-    peers[userId] = call;
+    call.on('stream', userStream => addVideoStream(video, userStream));
 }
 
 function addVideoStream(video, stream) {
     video.srcObject = stream;
-    video.addEventListener('loadedmetadata', () => { video.play(); });
+    video.addEventListener('loadedmetadata', () => video.play());
     videoGrid.append(video);
 }
 
-function updateParticipants(n) {
-    const count = document.getElementById('participant-count');
-    if (count) {
-        count.innerText = parseInt(count.innerText || "0") + n;
+// --- 4. EXISTING CHAT BRIDGE ---
+window.sendMessage = () => {
+    const input = document.getElementById('chat-input');
+    if (input.value.trim()) {
+        socket.emit('message', input.value, currentUserName);
+        input.value = '';
     }
 }
 
-// OPTIMIZED LEAVE CALL FUNCTION
-function leaveCall() {
-    // 1. Force the browser to stop any pending requests
-    window.stop();
+socket.on('createMessage', (msg, user) => {
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('message');
+    msgDiv.innerHTML = `<b style="color:#8ab4f8">${user}</b><br>${msg}`;
+    document.getElementById('chat-messages').append(msgDiv);
+    document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+});
 
-    // 2. Shut down the hardware (Camera/Mic)
-    if (myVideoStream) {
-        myVideoStream.getTracks().forEach(track => track.stop());
-    }
-
-    // 3. Destroy Peer and Socket connections
-    if (myPeer) myPeer.destroy();
-    if (socket) socket.disconnect();
-
-    // 4. Redirect to our custom exit page
-    // Using .replace ensures they can't click 'Back' to rejoin the room
-    window.location.replace("/left.html");
-}
-
-function copyLink() {
-    navigator.clipboard.writeText(window.location.href);
-    alert("Link copied!");
-}
-
-const toggleAudio = () => {
+// --- 5. NEW: CONTROL BUTTON LOGIC ---
+window.toggleAudio = () => {
     const enabled = myVideoStream.getAudioTracks()[0].enabled;
     myVideoStream.getAudioTracks()[0].enabled = !enabled;
     document.getElementById('mute-btn').classList.toggle('active-red');
 }
 
-const toggleVideo = () => {
+window.toggleVideo = () => {
     const enabled = myVideoStream.getVideoTracks()[0].enabled;
     myVideoStream.getVideoTracks()[0].enabled = !enabled;
     document.getElementById('video-btn').classList.toggle('active-red');
 }
 
-setInterval(() => {
-    const clock = document.getElementById('clock');
-    if (clock) {
-        clock.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-}, 1000);
-
-const roomDisplay = document.getElementById('room-id-display');
-if (roomDisplay) {
-    roomDisplay.innerText = "Room: " + ROOM_ID.substring(0, 6);
+window.leaveCall = () => {
+    window.location.href = '/';
 }

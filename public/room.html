@@ -3,47 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Meet Clone</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js" defer></script>
+    <title>Meeting Room | FlowState</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { 
+            --bg: #0f1113; 
+            --card: rgba(28, 30, 33, 0.7); 
+            --blue: #8ab4f8; 
+            --text: #e8eaed; 
+            --danger: #f28b82;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 1. 3D BACKGROUND */
+        .bg-3d-grid {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at center, #1a1c1e 0%, #0f1113 100%);
+        }
+
+        /* 2. MAIN LAYOUT */
+        .main-wrapper {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* Video Section */
+        .video-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        #video-grid {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 480px)); 
+            gap: 20px;
+            padding: 20px;
+            justify-content: center;
+            align-content: center;
+            z-index: 5;
+        }
+
+        video {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            border-radius: 20px;
+            background-color: #202124;
+            transform: rotateY(180deg);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.05);
+        }
+
+        /* 3. CHAT SIDEBAR */
+        .chat-sidebar {
+            width: 350px;
+            background: rgba(28, 30, 33, 0.95);
+            backdrop-filter: blur(15px);
+            border-left: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .chat-header {
+            padding: 20px;
+            font-weight: bold;
+            color: var(--blue);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 12px;
+            max-width: 90%;
+        }
+
+        .message b { color: var(--blue); display: block; font-size: 11px; margin-bottom: 3px; }
+
+        .chat-input-container {
+            padding: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .input-box {
+            background: #3c4043;
+            border-radius: 25px;
+            padding: 8px 15px;
+            display: flex;
+        }
+
+        #chat-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            outline: none;
+        }
+
+        /* 4. CONTROLS */
+        .controls-container {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            background: rgba(15, 17, 19, 0.8);
+        }
+
+        .control-btn {
+            width: 45px; height: 45px;
+            border-radius: 50%;
+            border: none;
+            background: #3c4043;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .control-btn.active-red { background: var(--danger) !important; }
+        .control-btn.leave { background: var(--danger); border-radius: 15px; width: 60px; }
+
+        .user-tag { padding: 10px 20px; color: var(--blue); font-weight: bold; }
+        .room-info-pill {
+    position: absolute;
+    top: 20px;
+    right: 380px; /* Positions it to the left of the chat sidebar */
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-family: monospace;
+    font-size: 14px;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+}
+.room-info-pill .label {
+    color: var(--sub-text);
+    margin-right: 8px;
+    font-weight: bold;
+}
+    </style>
 </head>
 <body>
-    <div class="header">
-        <div class="room-info">
-            <span id="room-id-display">Meeting Details</span>
-            <span class="separator">|</span>
-            <span id="clock">00:00</span>
-        </div>
-        <div class="participant-info">
-            👤 <span id="participant-count">1</span>
-        </div>
-    </div>
 
-    <div class="main-container">
-        <div class="main-left">
+    <div class="bg-3d-grid"></div>
+
+    <div class="main-wrapper">
+        <div class="video-section">
+           <div class="user-tag">
+    <i class="fas fa-circle" style="font-size: 8px; color: #34a853;"></i> 
+    <span id="user-name-display">Loading...</span>
+</div>
+            <div class="room-info-pill">
+    <span class="label">ROOM ID:</span>
+    <span id="display-room-id" style="color: var(--blue); letter-spacing: 1px;">------</span>
+    <button onclick="copyLink()" title="Copy ID" style="background:none; border:none; color:white; cursor:pointer; margin-left:10px;">
+        <i class="fas fa-copy"></i>
+    </button>
+</div>
             <div id="video-grid"></div>
-            <div class="controls">
-                <button id="mute-btn" class="control-btn" onclick="toggleAudio()">🎙️</button>
-                <button id="video-btn" class="control-btn" onclick="toggleVideo()">📹</button>
-                <button id="copy-btn" class="control-btn" onclick="copyLink()">🔗</button>
-                <button id="leave-btn" class="control-btn leave-btn" onclick="leaveCall()">📞</button>
+            
+            <div class="controls-container">
+                <button class="control-btn" id="mute-btn" onclick="toggleAudio()"><i class="fas fa-microphone"></i></button>
+                <button class="control-btn" id="video-btn" onclick="toggleVideo()"><i class="fas fa-video"></i></button>
+                <button class="control-btn" onclick="copyLink()"><i class="fas fa-share-alt"></i></button>
+                <button class="control-btn leave" onclick="leaveCall()"><i class="fas fa-phone-slash"></i></button>
             </div>
         </div>
 
-        <div class="main-right">
-            <div class="chat-header">
-                <h3>Meeting Chat</h3>
-            </div>
-            <div class="main-chat-window" id="chat-window">
-                <div class="messages-container" id="all-messages"></div>
-            </div>
-            <div class="main-message-container">
-                <input id="chat-message" type="text" placeholder="Type message..." autocomplete="off">
-                <button id="send-btn" onclick="sendMessage()">➤</button>
+        <div class="chat-sidebar">
+            <div class="chat-header">Meeting Chat</div>
+            <div id="chat-messages"></div>
+            <div class="chat-input-container">
+                <div class="input-box">
+                    <input type="text" id="chat-input" placeholder="Type a message...">
+                    <button onclick="sendMessage()" style="background:none; border:none; color:var(--blue); cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
+                </div>
             </div>
         </div>
     </div>
+
+    
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

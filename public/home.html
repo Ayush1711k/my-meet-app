@@ -2,61 +2,197 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RedDot Rush | Home</title>
+    <title>FlowState | Cosmic Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg: #1a1c1e; --card: #282a2d; --blue: #8ab4f8; --text: #e8eaed; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .hero { text-align: center; max-width: 500px; padding: 40px; background: var(--card); border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h1 { font-size: 32px; margin-bottom: 10px; color: var(--blue); }
-        .btn-group { display: flex; flex-direction: column; gap: 15px; margin-top: 30px; }
-        .btn { padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 16px; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-new { background: var(--blue); color: #202124; }
-        .join-box { display: flex; gap: 10px; margin-top: 10px; }
-        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #5f6368; background: #3c4043; color: white; outline: none; }
+        :root { 
+            --bg: #030406; 
+            --blue: #8ab4f8; 
+            --green: #34a853;
+            --text: #e8eaed; 
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg); 
+            margin: 0; height: 100vh; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+
+        /* 1. COSMIC BACKGROUND SYSTEM */
+        .bg-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: radial-gradient(circle at center, #0a1018 0%, #030406 100%);
+        }
+
+        .stars {
+            position: absolute; width: 2px; height: 2px; background: transparent;
+            box-shadow: 10vw 15vh #fff, 25vw 40vh #fff, 80vw 10vh #fff, 50vw 50vh #fff, 90vw 80vh #fff, 15vw 85vh #fff, 60vw 20vh #fff, 35vw 75vh #fff, 75vw 45vh #fff, 5vw 30vh #fff;
+            animation: twinkle 4s infinite ease-in-out;
+            z-index: 1;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .grid {
+            position: absolute; width: 200%; height: 200%; top: -50%; left: -50%;
+            background-image: 
+                linear-gradient(rgba(138, 180, 248, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(138, 180, 248, 0.15) 1px, transparent 1px);
+            background-size: 60px 60px;
+            transform: perspective(500px) rotateX(60deg);
+            animation: moveGrid 20s linear infinite;
+            z-index: 2;
+        }
+
+        @keyframes moveGrid {
+            from { transform: perspective(500px) rotateX(60deg) translateY(0); }
+            to { transform: perspective(500px) rotateX(60deg) translateY(60px); }
+        }
+
+        .orb {
+            position: absolute; width: 500px; height: 500px; border-radius: 50%;
+            background: rgba(138, 180, 248, 0.15); filter: blur(100px);
+            transition: all 1s ease; animation: float 15s infinite alternate;
+            z-index: 0;
+        }
+
+        @keyframes float { from { transform: translate(0, 0); } to { transform: translate(100px, 50px); } }
+
+        body.host-glow .orb { background: rgba(138, 180, 248, 0.4); width: 650px; }
+        body.join-glow .orb { background: rgba(52, 168, 83, 0.4); width: 650px; }
+
+        /* 2. USER CAPSULE */
+        .user-capsule {
+            position: fixed; top: 20px; left: 50%;
+            transform: translateX(-50%) perspective(500px);
+            z-index: 1000; transition: 0.5s;
+        }
+
+        .capsule-content {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            padding: 10px 25px; border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex; align-items: center; gap: 12px;
+            color: white; font-weight: 500; letter-spacing: 1px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform-style: preserve-3d; transition: 0.3s;
+        }
+
+        .capsule-content:hover {
+            transform: translateZ(20px) scale(1.05);
+            border-color: var(--blue);
+        }
+
+        .capsule-content i { color: var(--blue); text-shadow: 0 0 10px var(--blue); }
+
+        .online-indicator {
+            width: 8px; height: 8px; background: #34a853;
+            border-radius: 50%; box-shadow: 0 0 8px #34a853;
+        }
+
+        /* 3. CARD UI */
+        .main-layout { flex: 1; display: flex; align-items: center; justify-content: center; gap: 50px; z-index: 10; }
+
+        .action-card {
+            background: rgba(255, 255, 255, 0.04); backdrop-filter: blur(30px);
+            padding: 40px; border-radius: 30px; width: 320px; text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1); transition: 0.5s ease;
+        }
+
+        .action-card:hover { transform: translateY(-15px); border-color: rgba(255, 255, 255, 0.4); }
+
+        input {
+            width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.07); color: white; outline: none;
+        }
+
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
     </style>
 </head>
-<body>
-    <div class="hero">
-        <i class="fas fa-video" style="font-size: 48px; color: var(--blue); margin-bottom: 20px;"></i>
-        <h1>RedDot Rush</h1>
-        <p>Premium video meetings. Now free for everyone.</p>
-        
-        <div class="btn-group">
-            <a href="/new-meeting" class="btn btn-new"><i class="fas fa-plus"></i> New Meeting</a>
-            <div class="join-box">
-                <input type="text" id="roomCode" placeholder="Enter a code or link">
-                <button onclick="joinMeeting()" class="btn" style="background: transparent; color: var(--blue);">Join</button>
-            </div>
+<body id="main-body">
+
+    <div class="bg-container">
+        <div class="stars" style="top: 10%; left: 10%;"></div>
+        <div class="stars" style="top: 40%; left: 80%; animation-delay: 1s;"></div>
+        <div class="stars" style="top: 70%; left: 20%; animation-delay: 2.5s;"></div>
+        <div class="grid"></div>
+        <div class="orb" style="top: 10%; left: 10%;"></div>
+        <div class="orb" style="bottom: 10%; right: 10%; animation-delay: -5s;"></div>
+    </div>
+
+    <div class="user-capsule">
+        <div class="capsule-content">
+            <i class="fas fa-user-astronaut"></i>
+            <span id="display-name">SESSION ACTIVE</span>
+            <div class="online-indicator"></div>
+        </div>
+    </div>
+
+    
+
+    <div class="main-layout">
+        <div class="action-card" onmouseenter="document.body.classList.add('host-glow')" onmouseleave="document.body.classList.remove('host-glow')">
+            <i class="fas fa-plus-circle" style="font-size: 45px; color: var(--blue); margin-bottom: 20px;"></i>
+            <h2>Host Secure</h2>
+            <input type="password" id="new-room-pass" placeholder="Set Password">
+            <button class="btn" style="background: var(--blue); color: #000;" onclick="createSecureMeeting()">Start Meeting</button>
+        </div>
+
+        <div class="action-card" onmouseenter="document.body.classList.add('join-glow')" onmouseleave="document.body.classList.remove('join-glow')">
+            <i class="fas fa-door-open" style="font-size: 45px; color: var(--green); margin-bottom: 20px;"></i>
+            <h2>Join Room</h2>
+            <input type="text" id="join-room-id" placeholder="Room ID">
+            <input type="password" id="join-room-pass" placeholder="Password">
+            <button class="btn" style="background: var(--green); color: #fff;" onclick="joinSecureMeeting()">Enter Now</button>
         </div>
     </div>
 
     <script>
-    function joinMeeting() {
-        const input = document.getElementById('roomCode').value.trim();
-        
-        if (input) {
-            let roomId;
+        // 1. FETCH USER NAME ON LOAD
+        window.onload = () => {
+            fetch('/api/user-data')
+                .then(res => res.json())
+                .then(data => {
+                    if(data.username) {
+                        document.getElementById('display-name').innerText = data.username.toUpperCase();
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('display-name').innerText = "GUEST";
+                });
+        };
 
-            // Check if the user pasted a full URL (contains "http" or "render.com")
-            if (input.includes('/') || input.includes('.')) {
-                // Remove any trailing slashes and grab the last part of the path
-                const parts = input.replace(/\/$/, "").split('/');
-                roomId = parts[parts.length - 1];
-            } else {
-                // If they just typed a code, use it directly
-                roomId = input;
-            }
-
-            // Final check: redirect only if we have a valid ID
-            if (roomId && roomId.length > 5) {
-                window.location.href = `/${roomId}`;
-            } else {
-                alert("Please enter a valid room code or meeting link.");
-            }
+        function createSecureMeeting() {
+            const password = document.getElementById('new-room-pass').value;
+            if(!password) return alert("Set a password first");
+            
+            fetch('/create-secure-meeting', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            }).then(res => res.json()).then(data => {
+                window.location.href = `/${data.roomId}`;
+            });
         }
-    }
-</script>
+
+        function joinSecureMeeting() {
+            const roomId = document.getElementById('join-room-id').value;
+            const password = document.getElementById('join-room-pass').value;
+            
+            fetch('/join-meeting', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roomId, password })
+            }).then(res => res.json()).then(data => {
+                if(data.success) window.location.href = `/${roomId}`;
+                else alert(data.message);
+            });
+        }
+    </script>
 </body>
 </html>
