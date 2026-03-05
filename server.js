@@ -2,31 +2,36 @@ const express = require('express');
 const app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
-const mysql = require('mysql2');
+const mongoose = require('mongoose'); // Changed from mysql2
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
 
-// 1. DATABASE CONNECTION (UPDATED FOR CLOUD)
-const db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    ssl: {
-        rejectUnauthorized: false // REQUIRED for Aiven Cloud security
-    }
-});
 
-db.connect(err => {
-    if (err) {
-        console.log("MySQL Status: Connection Failed ->", err.message);
-    } else {
-        console.log("MySQL Status: Connected successfully...");
-    }
-});
+// 1. MONGODB CONNECTION (Long-form for Jio/Mobile Hotspot)
+const mongoURI = "mongodb://ayushadmin:Ayush%401234@flowstate-db.o3ykgrn.mongodb.net/flowstate_db?retryWrites=true&w=majority";
 
-// 2. MIDDLEWARE
+mongoose.connect(mongoURI)
+    .then(() => console.log("MongoDB Status: Connected successfully..."))
+    .catch(err => console.log("MongoDB Status: Connection Failed ->", err));
+
+mongoose.connect(mongoURI)
+    .then(() => console.log("MongoDB Status: Connected successfully..."))
+    .catch(err => console.log("MongoDB Status: Connection Failed ->", err));
+
+// 2. DATA SCHEMAS (Replaces CREATE TABLE)
+const User = mongoose.model('User', new mongoose.Schema({
+    username: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true }
+}));
+
+const Meeting = mongoose.model('Meeting', new mongoose.Schema({
+    room_id: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    created_at: { type: Date, default: Date.now }
+}));
+
+// 3. MIDDLEWARE
 app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -37,29 +42,30 @@ app.use(session({
     cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
-// 3. AUTHENTICATION API
+// 4. AUTHENTICATION API (Updated for Mongoose)
 app.post('/register', async (req, res) => {
     const { username, email, password } = req.body;
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        const sql = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
-        db.query(sql, [username, email, hashedPassword], (err, result) => {
-            if (err) return res.send("Registration Error. Email might already exist.");
-            req.session.user = { id: result.insertId, username, email };
-            res.redirect('/');
-        });
-    } catch (e) { res.status(500).send("Server Error"); }
+        const newUser = new User({ username, email, password: hashedPassword });
+        await newUser.save();
+        req.session.user = { id: newUser._id, username, email };
+        res.redirect('/');
+    } catch (e) { 
+        res.send("Registration Error. Email might already exist."); 
+    }
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
     const { email, password } = req.body;
-    db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
-        if (results.length > 0 && await bcrypt.compare(password, results[0].password)) {
-            req.session.user = results[0];
+    try {
+        const user = await User.findOne({ email });
+        if (user && await bcrypt.compare(password, user.password)) {
+            req.session.user = user;
             return res.redirect('/');
         }
         res.send("Invalid Credentials. <a href='/login.html'>Try again</a>");
-    });
+    } catch (e) { res.status(500).send("Server Error"); }
 });
 
 app.get('/logout', (req, res) => {
@@ -71,36 +77,37 @@ app.get('/logout', (req, res) => {
 
 app.get('/api/user-data', (req, res) => {
     if (req.session.user) {
-        // This MUST match the column name in your MySQL table
         res.json({ username: req.session.user.username });
     } else {
         res.status(401).json({ error: "Unauthorized" });
     }
 });
 
-// 4. SECURE MEETING LOGIC
+// 5. SECURE MEETING LOGIC (Updated for Mongoose)
 function generateShortId() {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-app.post('/create-secure-meeting', (req, res) => {
+app.post('/create-secure-meeting', async (req, res) => {
     const roomId = generateShortId();
     const { password } = req.body;
-    db.query("INSERT INTO meetings (room_id, password) VALUES (?, ?)", [roomId, password], (err) => {
-        if (err) return res.status(500).json({ error: "DB Error" });
+    try {
+        const newMeeting = new Meeting({ room_id: roomId, password });
+        await newMeeting.save();
         res.json({ roomId });
-    });
+    } catch (err) { res.status(500).json({ error: "DB Error" }); }
 });
 
-app.post('/join-meeting', (req, res) => {
+app.post('/join-meeting', async (req, res) => {
     const { roomId, password } = req.body;
-    db.query("SELECT * FROM meetings WHERE room_id = ? AND password = ?", [roomId, password], (err, results) => {
-        if (results.length > 0) res.json({ success: true });
+    try {
+        const meeting = await Meeting.findOne({ room_id: roomId, password });
+        if (meeting) res.json({ success: true });
         else res.json({ success: false, message: "Invalid Room ID or Password" });
-    });
+    } catch (e) { res.status(500).json({ error: "Server Error" }); }
 });
 
-// 5. NAVIGATION
+// 6. NAVIGATION
 app.get('/', (req, res) => {
     if (req.session.user) res.sendFile(__dirname + '/public/home.html');
     else res.redirect('/login.html');
@@ -110,7 +117,7 @@ app.get('/:room', (req, res) => {
     res.sendFile(__dirname + '/public/room.html');
 });
 
-// 6. SOCKET.IO (SIGNALING + CHAT)
+// 7. SOCKET.IO (SIGNALING + CHAT)
 io.on('connection', socket => {
     socket.on('join-room', (roomId, userId) => {
         socket.join(roomId);
@@ -124,9 +131,7 @@ io.on('connection', socket => {
     });
 });
 
-// Use Render's port or default to 3000
 const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`System is live on port ${PORT}`);
 });
